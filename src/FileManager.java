@@ -4,172 +4,103 @@ import java.util.Scanner;
 
 public class FileManager {
 
-    public static void save(
-            String fileName,
-            ArrayList<? extends Storable> objects
-    ) throws IOException {
+    public static void save(AccountManager am, Scheduler s)
+            throws FileNotFoundException {
 
-        prepareFolder(fileName);
+        PrintWriter out = new PrintWriter("students.txt");
 
-        PrintWriter output =
-                new PrintWriter(new FileWriter(fileName));
-
-        for (Storable object : objects) {
-            output.println(object.toFileLine());
+        for (Student st : am.getStudents()) {
+            out.println(st.toFileLine());
         }
 
-        output.close();
-    }
+        out.close();
 
-    public static void saveJobs(
-            String fileName,
-            ArrayList<Job> jobs
-    ) throws IOException {
+        out = new PrintWriter("requests.txt");
 
-        prepareFolder(fileName);
-
-        PrintWriter output =
-                new PrintWriter(new FileWriter(fileName));
-
-        for (Job job : jobs) {
-            output.println(job.toFileLine());
+        for (AccessRequest r : am.getRequests()) {
+            out.println(r.toFileLine());
         }
 
-        output.close();
-    }
+        out.close();
 
-    public static void saveStrings(
-            String fileName,
-            ArrayList<String> lines
-    ) throws IOException {
+        out = new PrintWriter("grants.txt");
 
-        prepareFolder(fileName);
-
-        PrintWriter output =
-                new PrintWriter(new FileWriter(fileName));
-
-        for (String line : lines) {
-            output.println(line);
+        for (String g : am.getGrants()) {
+            out.println(g);
         }
 
-        output.close();
-    }
+        out.close();
 
-    public static void saveScheduler(
-            String fileName,
-            Scheduler scheduler
-    ) throws IOException {
+        out = new PrintWriter("jobs.txt");
 
-        prepareFolder(fileName);
-
-        PrintWriter output =
-                new PrintWriter(new FileWriter(fileName));
-
-        output.println(
-                scheduler.isClockSet() + "|"
-                + scheduler.getStartMillis() + "|"
-                + scheduler.getClock() + "|"
-                + scheduler.getNextJobId() + "|"
-                + scheduler.getTotalBusy()
-        );
-
-        output.close();
-    }
-
-    public static ArrayList<Student> loadStudents(
-            String fileName
-    ) throws IOException {
-
-        ArrayList<Student> students =
-                new ArrayList<Student>();
-
-        File file = new File(fileName);
-
-        if (!file.exists()) {
-            return students;
+        for (Job j : s.getJobs()) {
+            out.println(j.toFileLine());
         }
 
-        Scanner input =
-                new Scanner(new FileReader(file));
+        out.close();
 
-        int lineNumber = 0;
+        out = new PrintWriter("clock.txt");
 
-        while (input.hasNextLine()) {
-            String line = input.nextLine();
-            lineNumber++;
+        out.println(s.isClockSet());
+        out.println(s.getStartMillis());
+        out.println(s.getClock());
+        out.println(s.getNextJobId());
+        out.println(s.getTotalBusy());
 
-            if (line.trim().equals("")) {
-                continue;
+        out.close();
+    }
+
+    private static ArrayList<String[]> read(String fileName)
+            throws FileNotFoundException {
+
+        ArrayList<String[]> lines =
+                new ArrayList<String[]>();
+
+        Scanner in = new Scanner(new File(fileName));
+
+        while (in.hasNextLine()) {
+            String line = in.nextLine();
+
+            if (!line.trim().equals("")) {
+                lines.add(line.split("\\|", -1));
             }
+        }
 
-            try {
-                String[] f =
-                        splitLine(line, 8, fileName, lineNumber);
+        in.close();
+        return lines;
+    }
 
-                TimeAllowance allowance =
-                        new TimeAllowance(
-                                Integer.parseInt(f[5]),
-                                Integer.parseInt(f[6]),
-                                Integer.parseInt(f[7])
-                        );
+    public static String load(AccountManager am, Scheduler s) {
+        String errors = "";
 
-                Student student =
+        try {
+            for (String[] f : read("students.txt")) {
+                am.getStudents().add(
                         new Student(
                                 f[0],
                                 f[1],
                                 f[2],
                                 f[3],
                                 f[4],
-                                allowance
-                        );
-
-                students.add(student);
-
-            } catch (NumberFormatException e) {
-                input.close();
-                throw damagedNumber(fileName, lineNumber, e);
-
-            } catch (IOException e) {
-                input.close();
-                throw e;
-            }
-        }
-
-        input.close();
-        return students;
-    }
-
-    public static ArrayList<AccessRequest> loadRequests(
-            String fileName
-    ) throws IOException {
-
-        ArrayList<AccessRequest> requests =
-                new ArrayList<AccessRequest>();
-
-        File file = new File(fileName);
-
-        if (!file.exists()) {
-            return requests;
-        }
-
-        Scanner input =
-                new Scanner(new FileReader(file));
-
-        int lineNumber = 0;
-
-        while (input.hasNextLine()) {
-            String line = input.nextLine();
-            lineNumber++;
-
-            if (line.trim().equals("")) {
-                continue;
+                                new TimeAllowance(
+                                        Integer.parseInt(f[5]),
+                                        Integer.parseInt(f[6]),
+                                        Integer.parseInt(f[7])
+                                )
+                        )
+                );
             }
 
-            try {
-                String[] f =
-                        splitLine(line, 6, fileName, lineNumber);
+        } catch (FileNotFoundException e) {
 
-                AccessRequest request =
+        } catch (Exception e) {
+            errors = errors
+                    + "students.txt is damaged and could not be fully read.\n";
+        }
+
+        try {
+            for (String[] f : read("requests.txt")) {
+                am.getRequests().add(
                         new AccessRequest(
                                 f[0],
                                 f[1],
@@ -177,223 +108,66 @@ public class FileManager {
                                 f[3],
                                 f[4],
                                 f[5]
-                        );
-
-                requests.add(request);
-
-            } catch (IOException e) {
-                input.close();
-                throw e;
-            }
-        }
-
-        input.close();
-        return requests;
-    }
-
-    public static ArrayList<Job> loadJobs(
-            String fileName
-    ) throws IOException {
-
-        ArrayList<Job> jobs =
-                new ArrayList<Job>();
-
-        File file = new File(fileName);
-
-        if (!file.exists()) {
-            return jobs;
-        }
-
-        Scanner input =
-                new Scanner(new FileReader(file));
-
-        int lineNumber = 0;
-
-        while (input.hasNextLine()) {
-            String line = input.nextLine();
-            lineNumber++;
-
-            if (line.trim().equals("")) {
-                continue;
+                        )
+                );
             }
 
-            try {
-                String[] f =
-                        splitLine(line, 17, fileName, lineNumber);
+        } catch (FileNotFoundException e) {
 
-                jobs.add(new Job(f));
-
-            } catch (NumberFormatException e) {
-                input.close();
-                throw damagedNumber(fileName, lineNumber, e);
-
-            } catch (IOException e) {
-                input.close();
-                throw e;
-            }
+        } catch (Exception e) {
+            errors = errors
+                    + "requests.txt is damaged and could not be fully read.\n";
         }
-
-        input.close();
-        return jobs;
-    }
-
-    public static ArrayList<String> loadStrings(
-            String fileName
-    ) throws IOException {
-
-        ArrayList<String> lines =
-                new ArrayList<String>();
-
-        File file = new File(fileName);
-
-        if (!file.exists()) {
-            return lines;
-        }
-
-        Scanner input =
-                new Scanner(new FileReader(file));
-
-        while (input.hasNextLine()) {
-            String line = input.nextLine();
-
-            if (!line.trim().equals("")) {
-                lines.add(line);
-            }
-        }
-
-        input.close();
-        return lines;
-    }
-
-    public static boolean loadScheduler(
-            String fileName,
-            Scheduler scheduler
-    ) throws IOException {
-
-        File file = new File(fileName);
-
-        if (!file.exists()) {
-            return false;
-        }
-
-        Scanner input =
-                new Scanner(new FileReader(file));
-
-        if (!input.hasNextLine()) {
-            input.close();
-
-            throw new IOException(
-                    "Damaged file " + fileName
-                    + ": scheduler data is missing."
-            );
-        }
-
-        String line = input.nextLine();
 
         try {
-            String[] f =
-                    splitLine(line, 5, fileName, 1);
-
-            boolean clockSet;
-
-            if (f[0].equals("true")) {
-                clockSet = true;
-
-            } else if (f[0].equals("false")) {
-                clockSet = false;
-
-            } else {
-                throw new IOException(
-                        "Damaged file " + fileName
-                        + " at line 1: invalid clock value."
+            for (String[] f : read("grants.txt")) {
+                am.getGrants().add(
+                        f[0] + "|"
+                        + f[1] + "|"
+                        + f[2] + "|"
+                        + f[3]
                 );
             }
 
-            scheduler.restore(
-                    clockSet,
-                    Long.parseLong(f[1]),
-                    Integer.parseInt(f[2]),
-                    Integer.parseInt(f[3]),
-                    Integer.parseInt(f[4])
-            );
+        } catch (FileNotFoundException e) {
 
-        } catch (NumberFormatException e) {
-            input.close();
-            throw damagedNumber(fileName, 1, e);
-
-        } catch (IOException e) {
-            input.close();
-            throw e;
+        } catch (Exception e) {
+            errors = errors
+                    + "grants.txt is damaged and could not be fully read.\n";
         }
 
-        while (input.hasNextLine()) {
-            String extraLine = input.nextLine();
+        try {
+            Scanner in = new Scanner(new File("clock.txt"));
 
-            if (!extraLine.trim().equals("")) {
-                input.close();
+            s.restore(
+                    in.nextBoolean(),
+                    in.nextLong(),
+                    in.nextInt(),
+                    in.nextInt(),
+                    in.nextInt()
+            );
 
-                throw new IOException(
-                        "Damaged file " + fileName
-                        + ": unexpected extra scheduler data."
-                );
+            in.close();
+
+        } catch (FileNotFoundException e) {
+
+        } catch (Exception e) {
+            errors = errors
+                    + "clock.txt is damaged and could not be read.\n";
+        }
+
+        try {
+            for (String[] f : read("jobs.txt")) {
+                s.addLoadedJob(new Job(f));
             }
+
+        } catch (FileNotFoundException e) {
+
+        } catch (Exception e) {
+            errors = errors
+                    + "jobs.txt is damaged and could not be fully read.\n";
         }
 
-        input.close();
-        return true;
-    }
-
-    private static String[] splitLine(
-            String line,
-            int expectedFields,
-            String fileName,
-            int lineNumber
-    ) throws IOException {
-
-        String[] fields = line.split("\\|", -1);
-
-        if (fields.length != expectedFields) {
-            throw new IOException(
-                    "Damaged file " + fileName
-                    + " at line " + lineNumber
-                    + ": expected " + expectedFields
-                    + " fields but found "
-                    + fields.length + "."
-            );
-        }
-
-        return fields;
-    }
-
-    private static IOException damagedNumber(
-            String fileName,
-            int lineNumber,
-            NumberFormatException cause
-    ) {
-
-        return new IOException(
-                "Damaged file " + fileName
-                + " at line " + lineNumber
-                + ": a number is invalid.",
-                cause
-        );
-    }
-
-    private static void prepareFolder(
-            String fileName
-    ) throws IOException {
-
-        File file = new File(fileName);
-        File folder = file.getParentFile();
-
-        if (folder != null
-                && !folder.exists()
-                && !folder.mkdirs()) {
-
-            throw new IOException(
-                    "Could not create folder: "
-                    + folder.getPath()
-            );
-        }
+        return errors;
     }
 }
