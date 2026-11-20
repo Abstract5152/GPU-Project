@@ -1,4 +1,4 @@
-public class Job {
+public class Job implements Storable {
 	private String jobId, studentId, title, applicationName, description, taskSize, status, cancelledBy, cancelReason;
 	private int workloadUnits, estimatedDuration, submissionTime, assignedGpuId, startTime, finishTime, cancelTime, charged;
 	private int predictedStart, queuePosition;
@@ -56,121 +56,121 @@ public class Job {
 		return 0;
 	}
 
-	// ---------------- state changes (only these methods change the status) ----------------
-
-	// Queued -> Running
-	public void start(int gpuId, int clock) {
-		if (!status.equals("Queued"))
-			throw new IllegalStateException("Only a queued job can start (job " + jobId + " is " + status + ").");
-		status = "Running";
+	public void start(int gpuId, int time) {
 		assignedGpuId = gpuId;
-		startTime = clock;
+		startTime = time;
+		status = "Running";
 	}
 
-	// Running -> Completed; the full runtime is charged
-	public void complete(int clock) {
-		if (!status.equals("Running"))
-			throw new IllegalStateException("Only a running job can complete (job " + jobId + " is " + status + ").");
-		status = "Completed";
-		finishTime = clock;
+	public void complete(int time) {
+		finishTime = time;
 		charged = estimatedDuration;
+		status = "Completed";
 	}
 
-	// Queued or Running -> Cancelled; runtime is 0 for a queued job
-	public void cancel(int clock, String by, String reason, int runtime) {
-		if (!status.equals("Queued") && !status.equals("Running"))
-			throw new IllegalStateException("Only a queued or running job can be cancelled (job " + jobId + " is " + status + ").");
+	public void cancel(int time, String by, String reason, int charge) {
 		if (status.equals("Running"))
-			finishTime = clock;
-		status = "Cancelled";
-		cancelTime = clock;
+			finishTime = time;
+		cancelTime = time;
 		cancelledBy = by;
 		cancelReason = reason;
-		charged = runtime;
+		charged = charge;
+		status = "Cancelled";
 	}
 
-	// set by Scheduler.predict(); these two values are not saved to file
 	public void setPrediction(int predictedStart, int queuePosition) {
 		this.predictedStart = predictedStart;
 		this.queuePosition = queuePosition;
 	}
 
-	// ---------------- values calculated from the records and the clock ----------------
-
-	// minutes left on a running job (full duration if queued, 0 if finished)
-	public int getRemainingRuntime(int clock) {
+	public int getRuntime(int clock) {
 		if (status.equals("Running"))
-			return Math.max(0, estimatedDuration - (clock - startTime));
-		if (status.equals("Queued"))
-			return estimatedDuration;
+			return clock - startTime;
+		if (finishTime >= 0)
+			return finishTime - startTime;
 		return 0;
 	}
 
-	// when a running job should finish (-1 if it never started)
-	public int getExpectedFinish() {
-		if (startTime < 0)
-			return -1;
-		return startTime + estimatedDuration;
+	public String getJobId() {
+		return jobId;
 	}
 
-	public int getPredictedFinish() {
-		return predictedStart + estimatedDuration;
+	public String getStudentId() {
+		return studentId;
 	}
 
-	// remaining wait of a queued job = predicted start - current time
-	public int getRemainingWait(int clock) {
-		if (!status.equals("Queued"))
-			return 0;
-		return Math.max(0, predictedStart - clock);
+	public String getTitle() {
+		return title;
 	}
 
-	// total time spent waiting in the queue
-	public int getTotalWait(int clock) {
-		if (startTime >= 0)
-			return startTime - submissionTime;
-		if (status.equals("Cancelled"))
-			return cancelTime - submissionTime;
-		return clock - submissionTime;
+	public String getApplicationName() {
+		return applicationName;
 	}
 
-	// actual minutes spent on a GPU (waiting excluded)
-	public int getRuntime(int clock) {
-		if (startTime < 0)
-			return 0;
-		if (status.equals("Running"))
-			return clock - startTime;
-		return finishTime - startTime;
+	public String getDescription() {
+		return description;
 	}
 
-	// ---------------- getters (no setters for status, GPU or times) ----------------
+	public String getTaskSize() {
+		return taskSize;
+	}
 
-	public String getJobId() { return jobId; }
-	public String getStudentId() { return studentId; }
-	public String getTitle() { return title; }
-	public String getApplicationName() { return applicationName; }
-	public String getDescription() { return description; }
-	public String getTaskSize() { return taskSize; }
-	public String getStatus() { return status; }
-	public String getCancelledBy() { return cancelledBy; }
-	public String getCancelReason() { return cancelReason; }
-	public int getWorkloadUnits() { return workloadUnits; }
-	public int getEstimatedDuration() { return estimatedDuration; }
-	public int getSubmissionTime() { return submissionTime; }
-	public int getAssignedGpuId() { return assignedGpuId; }
-	public int getStartTime() { return startTime; }
-	public int getFinishTime() { return finishTime; }
-	public int getCancelTime() { return cancelTime; }
-	public int getCharged() { return charged; }
-	public int getPredictedStart() { return predictedStart; }
-	public int getQueuePosition() { return queuePosition; }
+	public int getWorkloadUnits() {
+		return workloadUnits;
+	}
 
-	// ---------------- file storage ----------------
+	public int getEstimatedDuration() {
+		return estimatedDuration;
+	}
 
-	// 17 fields separated by '|', in the same order as the Job(String[] f) constructor
+	public int getSubmissionTime() {
+		return submissionTime;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public int getAssignedGpuId() {
+		return assignedGpuId;
+	}
+
+	public int getStartTime() {
+		return startTime;
+	}
+
+	public int getFinishTime() {
+		return finishTime;
+	}
+
+	public int getCancelTime() {
+		return cancelTime;
+	}
+
+	public String getCancelledBy() {
+		return cancelledBy;
+	}
+
+	public String getCancelReason() {
+		return cancelReason;
+	}
+
+	public int getCharged() {
+		return charged;
+	}
+
+	public int getPredictedStart() {
+		return predictedStart;
+	}
+
+	public int getQueuePosition() {
+		return queuePosition;
+	}
+
 	public String toFileLine() {
-		return jobId + "|" + studentId + "|" + title + "|" + applicationName + "|" + description + "|" + taskSize + "|"
-				+ workloadUnits + "|" + estimatedDuration + "|" + submissionTime + "|" + status + "|" + assignedGpuId
-				+ "|" + startTime + "|" + finishTime + "|" + cancelTime + "|" + cancelledBy + "|" + cancelReason + "|"
-				+ charged;
+		return jobId + "|" + studentId + "|" + title + "|" + applicationName + "|" + description + "|" + taskSize
+				+ "|" + workloadUnits + "|" + estimatedDuration + "|" + submissionTime + "|" + status + "|"
+				+ assignedGpuId + "|" + startTime + "|" + finishTime + "|" + cancelTime + "|" + cancelledBy + "|"
+				+ cancelReason + "|" + charged;
 	}
 }
