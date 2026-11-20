@@ -1,0 +1,8 @@
+100000001|Ahmed Ali|ahmed@ku.ac.ae|0501111111|pass1|Approved
+100000002|Sara Salim|sara@ku.ac.ae|0502222222|pass2|Approved
+100000003|Amna Rashid|amna@ku.ac.ae|0503333333|pass3|Approved
+100000004|Basim Humaid|basim@ku.ac.ae|0504444444|pass4|Approved
+100000005|Mona Saeed|mona@ku.ac.ae|0505555555|pass5|Approved
+100000006|Khalid Omar|khalid@ku.ac.ae|0506666666|pass6|Rejected
+100000007|Noor Hassan|noor@ku.ac.ae|0507777777|pass7|Pending
+100000008|Hamad Yousef|hamad@ku.ac.ae|0508888888|pass8|Pending
