@@ -187,8 +187,86 @@ public class AdminFrame extends JFrame implements ActionListener {
 		}
 	}
 
+	private void showStudent(String id) {
+		Student st = am.findStudent(id);
+		if (st == null)
+			throw new IllegalArgumentException("No approved student has this university ID.");
+		TimeAllowance a = st.getAllowance();
+		String text = "ID: " + st.getId() + "\nName: " + st.getName() + "\nEmail: " + st.getEmail() + "\nPhone: "
+				+ st.getPhone() + "\n\nAllocated: " + a.getAllocated() + " min   Used: " + a.getUsed()
+				+ " min   Reserved: " + a.getReserved() + " min   Available: " + a.getAvailable() + " min\n\nExtra time granted:\n";
+		for (String g : am.getGrants()) {
+			String[] f = g.split("\\|");
+			if (f[0].equals(id))
+				text = text + "  +" + f[1] + " min on " + f[3] + " - " + f[2] + "\n";
+		}
+		text = text + "\nJobs:\n";
+		for (Job j : s.getJobsOf(id))
+			text = text + "  " + j.getJobId() + "  " + j.getTitle() + "  (" + j.getApplicationName() + ", "
+					+ j.getTaskSize() + ")  " + j.getStatus() + "  " + JobView.gpu(j) + "  " + JobView.result(j, s) + "\n";
+		studentA.setText(text);
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// the button actions are added on Friday
+		try {
+			if (e.getSource() == setClockB) {
+				s.setClock((Date) clockSpinner.getValue());
+				GPUApp.save();
+			} else if (e.getSource() == advanceB) {
+				s.advanceMinute();
+				GPUApp.save();
+			} else if (e.getSource() == cancelB) {
+				int row = jobTable.getSelectedRow();
+				if (row == -1)
+					throw new IllegalArgumentException("Please select a job in the jobs table first.");
+				String jobId = (String) jobModel.getValueAt(row, 0);
+				String reason = JOptionPane.showInputDialog("Reason for cancelling " + jobId + ":");
+				if (reason != null) {
+					s.cancel(jobId, admin, reason);
+					GPUApp.save();
+					JOptionPane.showMessageDialog(null, "Job " + jobId + " was cancelled.");
+				}
+			} else if (e.getSource() == approveB) {
+				int row = requestTable.getSelectedRow();
+				if (row == -1)
+					throw new IllegalArgumentException("Please select a request first.");
+				String id = (String) requestModel.getValueAt(row, 0);
+				String minutes = JOptionPane.showInputDialog("GPU minutes to allocate to " + id + ":", "100");
+				if (minutes != null) {
+					am.approve(id, Integer.parseInt(minutes.trim()));
+					GPUApp.save();
+					JOptionPane.showMessageDialog(null, "Student " + id + " was approved.");
+				}
+			} else if (e.getSource() == rejectB) {
+				int row = requestTable.getSelectedRow();
+				if (row == -1)
+					throw new IllegalArgumentException("Please select a request first.");
+				String id = (String) requestModel.getValueAt(row, 0);
+				am.reject(id);
+				GPUApp.save();
+				JOptionPane.showMessageDialog(null, "Request " + id + " was rejected.");
+			} else if (e.getSource() == searchB) {
+				showStudent(searchF.getText().trim());
+			} else if (e.getSource() == grantB) {
+				String id = searchF.getText().trim();
+				am.grantExtra(id, Integer.parseInt(minutesF.getText().trim()), reasonF.getText().trim(),
+						s.formatTime(s.getClock()));
+				GPUApp.save();
+				minutesF.setText("");
+				reasonF.setText("");
+				showStudent(id);
+			} else if (e.getSource() == logoutB) {
+				GPUApp.save();
+				dispose();
+				new LoginFrame();
+				return;
+			}
+		} catch (NumberFormatException ex) {
+			JOptionPane.showMessageDialog(null, "Please enter a whole number of minutes.");
+		} catch (IllegalArgumentException ex) {
+			JOptionPane.showMessageDialog(null, ex.getMessage());
+		}
+		refresh();
 	}
 }
