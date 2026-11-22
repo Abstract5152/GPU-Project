@@ -1,5 +1,7 @@
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 
 public class Scheduler {
@@ -65,17 +67,45 @@ public class Scheduler {
 		a.reserve(units);
 		jobs.add(j);
 		dispatch();
+		predict();
 		return j;
+	}
+
+	// Queued jobs in First Come First Served order: submission time first, then job ID
+	private ArrayList<Job> getQueuedInOrder() {
+		ArrayList<Job> queued = new ArrayList<Job>();
+		for (Job j : jobs)
+			if (j.getStatus().equals("Queued"))
+				queued.add(j);
+		Collections.sort(queued, new Comparator<Job>() {
+			public int compare(Job a, Job b) {
+				if (a.getSubmissionTime() != b.getSubmissionTime())
+					return Integer.compare(a.getSubmissionTime(), b.getSubmissionTime());
+				return Integer.compare(idNumber(a), idNumber(b));
+			}
+		});
+		return queued;
+	}
+
+	// "J101" -> 101, so J99 comes before J101
+	private int idNumber(Job j) {
+		return Integer.parseInt(j.getJobId().substring(1));
+	}
+
+	// finds the allowance of the job's owner, with a clear error if the account is missing
+	private TimeAllowance allowanceOf(Job j) {
+		Student s = accounts.findStudent(j.getStudentId());
+		if (s == null)
+			throw new IllegalStateException("No student account found for " + j.getStudentId() + ".");
+		return s.getAllowance();
 	}
 
 	private void dispatch() {
 		for (GPU g : gpus) {
 			if (!g.isBusy()) {
-				Job next = null;
-				for (Job j : jobs)
-					if (next == null && j.getStatus().equals("Queued"))
-						next = j;
-				if (next != null) {
+				ArrayList<Job> queued = getQueuedInOrder();
+				if (!queued.isEmpty()) {
+					Job next = queued.get(0);
 					next.start(g.getId(), clock);
 					g.setCurrentJob(next);
 				}
@@ -93,7 +123,7 @@ public class Scheduler {
 				Job j = g.getCurrentJob();
 				if (clock >= g.getFreeTime()) {
 					j.complete(clock);
-					TimeAllowance a = accounts.findStudent(j.getStudentId()).getAllowance();
+					TimeAllowance a = allowanceOf(j);
 					a.release(j.getEstimatedDuration());
 					a.charge(j.getEstimatedDuration());
 					g.setCurrentJob(null);
@@ -101,6 +131,7 @@ public class Scheduler {
 			}
 		}
 		dispatch();
+		predict();
 	}
 
 	public void cancel(String jobId, User by, String reason) {
@@ -113,7 +144,7 @@ public class Scheduler {
 			throw new IllegalArgumentException("Only queued or running jobs can be cancelled.");
 		if (reason == null || !AccountManager.isText(reason))
 			throw new IllegalArgumentException("Please enter a reason for the cancellation.");
-		TimeAllowance a = accounts.findStudent(j.getStudentId()).getAllowance();
+		TimeAllowance a = allowanceOf(j);
 		if (j.getStatus().equals("Queued")) {
 			j.cancel(clock, by.getId(), reason, 0);
 			a.release(j.getEstimatedDuration());
@@ -125,27 +156,27 @@ public class Scheduler {
 			a.charge(runtime);
 			dispatch();
 		}
+		predict();
 	}
 
+	// Works on a copy of each GPU's free time, so live assignments are never changed
 	public void predict() {
-		int[] free = new int[4];
-		for (int i = 0; i < 4; i++) {
+		int[] free = new int[gpus.size()];
+		for (int i = 0; i < gpus.size(); i++) {
 			if (gpus.get(i).isBusy())
 				free[i] = gpus.get(i).getFreeTime();
 			else
 				free[i] = clock;
 		}
 		int position = 1;
-		for (Job j : jobs) {
-			if (j.getStatus().equals("Queued")) {
-				int best = 0;
-				for (int i = 1; i < 4; i++)
-					if (free[i] < free[best])
-						best = i;
-				j.setPrediction(free[best], position);
-				free[best] = free[best] + j.getEstimatedDuration();
-				position++;
-			}
+		for (Job j : getQueuedInOrder()) {
+			int best = 0;
+			for (int i = 1; i < free.length; i++)
+				if (free[i] < free[best])
+					best = i;
+			j.setPrediction(free[best], position);
+			free[best] = free[best] + j.getEstimatedDuration();
+			position++;
 		}
 	}
 
@@ -163,6 +194,7 @@ public class Scheduler {
 				list.add(j);
 		return list;
 	}
+
 	public int count(String status) {
 		int n = 0;
 		for (Job j : jobs)
@@ -170,6 +202,7 @@ public class Scheduler {
 				n++;
 		return n;
 	}
+
 	public int busyGpus() {
 		int n = 0;
 		for (GPU g : gpus)
@@ -181,7 +214,7 @@ public class Scheduler {
 	public String getUtilization() {
 		if (clock == 0)
 			return "N/A";
-		return String.format("%.1f%%", totalBusy * 100.0 / (4 * clock));
+		return String.format("%.1f%%", totalBusy * 100.0 / (gpus.size() * clock));
 	}
 
 	public ArrayList<GPU> getGpus() {
