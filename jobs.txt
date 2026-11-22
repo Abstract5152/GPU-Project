@@ -1,0 +1,19 @@
+J101|100000001|CNN training|PyTorch|CNN training using PyTorch|Medium|15|15|0|Completed|1|0|15|-1|||15
+J102|100000002|Data cleaning|Pandas|Data cleaning using Pandas|Small|5|5|0|Completed|2|0|5|-1|||5
+J103|100000003|Model training|TensorFlow|Model training using TensorFlow|Large|30|30|0|Completed|3|0|30|-1|||30
+J104|100000004|Protein folding|AlphaFold|Protein folding using AlphaFold|Very large|60|60|0|Cancelled|4|0|8|8|admin|GPU maintenance needed|8
+J105|100000005|Image processing|OpenCV|Image processing using OpenCV|Small|5|5|0|Completed|2|5|10|-1|||5
+J106|100000001|Hyperparameter search|PyTorch|Hyperparameter search using PyTorch|Small|5|5|0|Completed|4|8|13|-1|||5
+J107|100000002|Video rendering|Blender|Video rendering using Blender|Large|30|30|5|Cancelled|0|-1|-1|5|100000002|Submitted by mistake|0
+J108|100000005|Speech model|Whisper|Speech model using Whisper|Medium|15|15|8|Completed|2|10|25|-1|||15
+J109|100000003|Model evaluation|TensorFlow|Model evaluation using TensorFlow|Large|30|30|15|Running|1|15|-1|-1|||0
+J110|100000004|Genome analysis|Python|Genome analysis using Python|Medium|15|15|15|Cancelled|4|15|19|19|100000004|Wrong input data|4
+J111|100000001|Text generation|Transformers|Text generation using Transformers|Large|30|30|19|Running|4|19|-1|-1|||0
+J112|100000002|Chart rendering|Matplotlib|Chart rendering using Matplotlib|Small|5|5|19|Completed|2|25|30|-1|||5
+J113|100000005|Object detection|YOLO|Object detection using YOLO|Medium|15|15|29|Running|2|30|-1|-1|||0
+J114|100000004|Climate model|Fortran|Climate model using Fortran|Large|30|30|29|Running|3|30|-1|-1|||0
+J115|100000001|Translation model|Transformers|Translation model using Transformers|Small|5|5|29|Queued|0|-1|-1|-1|||0
+J116|100000002|Recommender system|Spark|Recommender system using Spark|Medium|15|15|29|Queued|0|-1|-1|-1|||0
+J117|100000005|Face recognition|OpenCV|Face recognition using OpenCV|Small|5|5|35|Queued|0|-1|-1|-1|||0
+J118|100000002|Sentiment analysis|Scikit-learn|Sentiment analysis using Scikit-learn|Small|5|5|35|Queued|0|-1|-1|-1|||0
+J119|100000004|Weather forecast|Python|Weather forecast using Python|Medium|15|15|35|Queued|0|-1|-1|-1|||0

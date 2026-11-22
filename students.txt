@@ -1,0 +1,5 @@
+100000001|Ahmed Ali|ahmed@ku.ac.ae|0501111111|pass1|100|20|35
+100000002|Sara Salim|sara@ku.ac.ae|0502222222|pass2|100|10|20
+100000003|Amna Rashid|amna@ku.ac.ae|0503333333|pass3|60|30|30
+100000004|Basim Humaid|basim@ku.ac.ae|0504444444|pass4|130|12|45
+100000005|Mona Saeed|mona@ku.ac.ae|0505555555|pass5|100|20|20
