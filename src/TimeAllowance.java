@@ -24,6 +24,10 @@ public class TimeAllowance {
 		return allocated - used - reserved;
 	}
 
+	public void setAllocated(int minutes) {
+		allocated = minutes;
+	}
+
 	public void addTime(int minutes) {
 		allocated = allocated + minutes;
 	}

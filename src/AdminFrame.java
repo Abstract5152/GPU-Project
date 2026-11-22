@@ -1,3 +1,4 @@
+
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -13,8 +14,9 @@ public class AdminFrame extends JFrame implements ActionListener {
 	Scheduler s = GPUApp.scheduler;
 	JLabel clockL, summaryL;
 	JSpinner clockSpinner;
-	JButton setClockB, advanceB, logoutB, cancelB, approveB, rejectB, searchB, grantB;
-	JTextField searchF, minutesF, reasonF;
+	JButton setClockB, advanceB, logoutB, cancelB, approveB, rejectB, searchB, grantB, setAllocB;
+	JTextField searchF, minutesF, reasonF, allocF;
+	String shownStudentId = null;
 	JTextArea studentA;
 	DefaultTableModel gpuModel, jobModel, doneModel, balanceModel, requestModel;
 	JTable jobTable, requestTable;
@@ -90,6 +92,8 @@ public class AdminFrame extends JFrame implements ActionListener {
 		minutesF = new JTextField(5);
 		reasonF = new JTextField(20);
 		grantB = new JButton("Grant Extra Time");
+		allocF = new JTextField(5);
+		setAllocB = new JButton("Set Allocation");
 		studentA = new JTextArea();
 		studentA.setEditable(false);
 		JPanel searchPanel = new JPanel();
@@ -102,6 +106,9 @@ public class AdminFrame extends JFrame implements ActionListener {
 		grantPanel.add(new JLabel("Reason:"));
 		grantPanel.add(reasonF);
 		grantPanel.add(grantB);
+		grantPanel.add(new JLabel("   New total allocation:"));
+		grantPanel.add(allocF);
+		grantPanel.add(setAllocB);
 		JPanel students = new JPanel(new BorderLayout());
 		students.add(searchPanel, BorderLayout.NORTH);
 		students.add(new JScrollPane(studentA), BorderLayout.CENTER);
@@ -121,6 +128,7 @@ public class AdminFrame extends JFrame implements ActionListener {
 		rejectB.addActionListener(this);
 		searchB.addActionListener(this);
 		grantB.addActionListener(this);
+		setAllocB.addActionListener(this);
 
 		refresh();
 		setVisible(true);
@@ -205,6 +213,7 @@ public class AdminFrame extends JFrame implements ActionListener {
 			text = text + "  " + j.getJobId() + "  " + j.getTitle() + "  (" + j.getApplicationName() + ", "
 					+ j.getTaskSize() + ")  " + j.getStatus() + "  " + JobView.gpu(j) + "  " + JobView.result(j, s) + "\n";
 		studentA.setText(text);
+		shownStudentId = id;
 	}
 
 	@Override
@@ -249,13 +258,22 @@ public class AdminFrame extends JFrame implements ActionListener {
 			} else if (e.getSource() == searchB) {
 				showStudent(searchF.getText().trim());
 			} else if (e.getSource() == grantB) {
-				String id = searchF.getText().trim();
+				if (shownStudentId == null)
+					throw new IllegalArgumentException("Please search for a student first.");
+				String id = shownStudentId;
 				am.grantExtra(id, Integer.parseInt(minutesF.getText().trim()), reasonF.getText().trim(),
 						s.formatTime(s.getClock()));
 				GPUApp.save();
 				minutesF.setText("");
 				reasonF.setText("");
 				showStudent(id);
+			} else if (e.getSource() == setAllocB) {
+				if (shownStudentId == null)
+					throw new IllegalArgumentException("Please search for a student first.");
+				am.setAllocation(shownStudentId, Integer.parseInt(allocF.getText().trim()));
+				GPUApp.save();
+				allocF.setText("");
+				showStudent(shownStudentId);
 			} else if (e.getSource() == logoutB) {
 				GPUApp.save();
 				dispose();

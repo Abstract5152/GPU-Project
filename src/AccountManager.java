@@ -75,6 +75,19 @@ public class AccountManager {
 		grants.add(id + "|" + minutes + "|" + reason + "|" + time);
 	}
 
+	public void setAllocation(String id, int minutes) {
+		Student s = findStudent(id);
+		if (s == null)
+			throw new IllegalArgumentException("No approved student has this university ID.");
+		TimeAllowance a = s.getAllowance();
+		if (minutes <= 0)
+			throw new IllegalArgumentException("The allowance must be more than 0 minutes.");
+		if (minutes < a.getUsed() + a.getReserved())
+			throw new IllegalArgumentException("The allowance cannot be less than the used + reserved time ("
+					+ (a.getUsed() + a.getReserved()) + " minutes).");
+		a.setAllocated(minutes);
+	}
+
 	public User login(String id, String password) {
 		if (id.equals(admin.getId())) {
 			if (admin.checkPassword(password))
