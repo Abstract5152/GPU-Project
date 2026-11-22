@@ -163,7 +163,6 @@ public class Scheduler {
 				list.add(j);
 		return list;
 	}
-
 	public int count(String status) {
 		int n = 0;
 		for (Job j : jobs)
@@ -171,7 +170,6 @@ public class Scheduler {
 				n++;
 		return n;
 	}
-
 	public int busyGpus() {
 		int n = 0;
 		for (GPU g : gpus)
